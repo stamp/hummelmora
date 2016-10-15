@@ -59,6 +59,10 @@
 					</div>
 				</div>
 			</fieldset>
+			<fieldset>
+				<legend>Temperaturgivare</legend>
+				<div id="sensors"></div>
+			</fieldset>
 		</form>
 	</div>
 
@@ -102,6 +106,22 @@
 						    $('#heat2').bootstrapToggle('off');
 						}
 						break;
+					case 'temp':
+						$.each(line, function(name, value) {
+							if ( name.substr(0,2) != "28" ) {
+							    return;
+							}
+							switch(name) {
+							 case '28-000006c5bc53':
+								 name = 'Bottenvåning'; break;
+							 case '28-000006c5bfcc':
+								 name = 'Övervåning'; break;
+							 case '28-000006c73b0c':
+								 name = 'Utomhus'; break;
+							}
+							row = $('<div class="form-group" style="clear:both;"><label class="col-xs-4 control-label">'+name+'</label><div class="col-xs-8"><div class="pull-right">'+value+'</div></div></div>');
+							$('#sensors').append(row);
+						});
 				}
 			});
 

@@ -13,6 +13,7 @@ import (
 )
 
 type webserver struct {
+	Temperature *TempSensors `inject:""`
 }
 
 func (self *webserver) Start() {
@@ -23,9 +24,11 @@ func (self *webserver) Start() {
 
 	heat1 := rpio.Pin(22)
 	heat1.Output()
+	heat1.High()
 
 	heat2 := rpio.Pin(23)
 	heat2.Output()
+	heat2.High()
 
 	lights := rpio.Pin(24)
 	lights.Output()
@@ -45,6 +48,21 @@ func (self *webserver) Start() {
 
 	m.HandleConnect(func(s *melody.Session) {
 		logrus.Info("WS connect")
+		go func() {
+			type Msg struct {
+				Heat1       bool               `json:"heat1",`
+				Heat2       bool               `json:"heat2",`
+				Temperature map[string]float64 `json:"temp",`
+			}
+			msg := &Msg{
+				Heat1:       heat1.Read() != rpio.High,
+				Heat2:       heat2.Read() != rpio.High,
+				Temperature: self.Temperature.Get(),
+			}
+			logrus.Infof("WS connect, sending: %#v", msg)
+			data, _ := json.Marshal(msg)
+			s.Write(data)
+		}()
 	})
 	m.HandleDisconnect(func(s *melody.Session) {
 		logrus.Info("WS disconnect")
@@ -72,6 +90,7 @@ func (self *webserver) Start() {
 					}
 				default:
 					logrus.Error("Heat1")
+					return
 				}
 			case "heat2":
 				switch val := line.(type) {
@@ -84,6 +103,7 @@ func (self *webserver) Start() {
 					}
 				default:
 					logrus.Error("Heat2")
+					return
 				}
 			case "lights":
 				logrus.Info("Pulse lights")
@@ -92,11 +112,11 @@ func (self *webserver) Start() {
 				lights.Low()
 			default:
 				logrus.Error("key", key)
+				return
 			}
 		}
 
-		//m.Broadcast(msg)
-
+		m.Broadcast(msg)
 	})
 
 	go func() {

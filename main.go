@@ -31,6 +31,7 @@ func main() {
 	// Register the rest of the services
 	services = append(
 		services,
+		&TempSensors{},
 		ws,
 	)
 
